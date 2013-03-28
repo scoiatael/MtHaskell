@@ -18,42 +18,71 @@ sparse str = case str of
   "Ing" -> Ing
   "Rfp" -> Rfp
   "Grv" -> Grv
+  _     -> NullSt
 
 playadv :: HidPlayer -> IO HidPlayer
 playadv hpl = do
-  putStr "Adversary turn\n"
-  newpl <- playturn $ Player_state [] [] hpl
+  newpl <- playturn $ Player_state ["<placeholder>"] [] hpl
   return $ visible newpl
 
 playturn :: Player -> IO Player
 playturn pl = do
-  putStr "Your turn\n"
   print pl
-  line <- getLine
-  let cmd = mparse line
-  putStr $ if cmd==Help then help else ""
-  if (cmd /= End) && (player_alive pl)
-    then playturn $ make_move pl cmd else return pl
+  if not (player_alive pl)
+  then
+    do
+      return pl
+  else
+    do
+      line <- getLine
+      let cmd = mparse line
+      putStr $ if cmd==Help then help else ""
+      if (cmd /= End) 
+        then playturn $ make_move pl cmd else return pl
   where
     help = "rcv_dmg <Amount>\ndraw <Amount>\nput <Card>\nmove <Card> <From> <To>\nhelp\nNames: Hand -> Hand, Ing -> In Game, Rfp -> Removed from play, Grv -> Graveyard\n"
 
 
+credits :: Game -> IO Bool
+credits g =
+  do
+    let ret1 = (player_alive $ player g ) 
+    let ret2 = (adversary_alive $ adversary g)
+    if ret1 && ret2
+    then
+      do
+        return True
+    else
+      do
+        if ret1
+        then 
+          do 
+            putStr "You Win!\n"
+        else
+          do
+            putStr "You Lose!\n"
+        return False
+
 play :: Game -> IO ()
 play game = 
   do
-    if (player_alive $ player game ) && (adversary_alive $ adversary game)
+    putStr "Adversary turn\n---\n"
+    newadv <- playadv $ adversary game
+    r1 <- credits (Game_state (player game) newadv)
+    if not r1 
     then 
       do
-        newadv <- playadv $ adversary game
-        newpl <- playturn $ player game
-        let newg = Game_state newpl newadv
-        play newg
+        return ()
     else
       do
-        if not $ player_alive $ player game
+        putStr "Your turn\n---\n"
+        newpl <- playturn $ player game
+        let newg = Game_state newpl newadv
+        r2 <- credits newg
+        if (not r2)
         then
           do
-            putStr "You Lose!\n"
+            return ()
         else
-          do
-            putStr "You Win!\n"
+          do    
+            play newg
