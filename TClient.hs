@@ -21,11 +21,13 @@ sparse str = case str of
 
 playadv :: HidPlayer -> IO HidPlayer
 playadv hpl = do
-  newpl <- Player_state [] [] hpl
+  putStr "Adversary turn\n"
+  newpl <- playturn $ Player_state [] [] hpl
   return $ visible newpl
 
 playturn :: Player -> IO Player
 playturn pl = do
+  putStr "Your turn\n"
   print pl
   line <- getLine
   let cmd = mparse line

@@ -9,7 +9,7 @@ main = do
   play game
   putStr "Play again? Y/N\n"
   line <- getLine
-  if (toUpper (line !! 0)) == "Y")
+  if (toUpper (line !! 0)) == 'Y'
   then 
     do
       main
