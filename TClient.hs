@@ -1,28 +1,56 @@
 module TClient where
 import Core
 
-mparse :: String -> Command
+newAdversary:: HidPlayer
+newAdversary = HidPlayer_state [empty_played] [[]] 20
+
+newPlayer :: String -> IO Player
+newPlayer str = 
+  do
+    return $ Player_state [map (:[]) str] [[]] newAdversary
+
+adversary_alive :: HidPlayer -> Bool
+adversary_alive hpl = (hp hpl) > 0
+
+player_alive :: Player -> Bool
+player_alive _ = True
+--player_alive pl = (adversary_alive $ visible pl) && (length $ (lib pl)!!0) > 0
+     
+shuffle :: [Card] -> [Card]
+shuffle r = r
+
+
+type HidPlayer_move = HidPlayer -> CoreCommand -> HidPlayer
+make_shadow_move :: HidPlayer_move
+make_shadow_move arg cmd = visible $ make_move (Player_state [] [] arg) cmd
+
+data ClientCommand = Core CoreCommand | End | Help deriving (Eq)
+mparse :: String -> ClientCommand
 mparse str = let wrds = words str in case wrds !! 0 of
-  "rcv_dmg" -> Receive_dmg (read (wrds !! 1) :: Int)
-  "draw" -> From_lib (read (wrds !! 1) :: Int)
-  "put" -> To_lib (wrds !! 1)
-  "move" -> Move_card (wrds !! 1) (sparse $ wrds !! 2) (sparse $ wrds !! 3)
+  "suffer" -> Core $ Receive_dmg (read (wrds !! 1) :: Int)
+  "draw" -> Core $ From_lib (read (wrds !! 1) :: Int) 0 (Hand, 0)
+  "move" -> Core $ Move_card (cparse $ wrds !! 1) (sparse $ wrds !! 2) (sparse $ wrds !! 3)
   "help" -> Help
   "end" -> End
-  otherwise -> Null
+  otherwise -> Core $ NullC
+
+cparse :: String -> CardId
+cparse str = case str!!0 of
+  i -> Id (read (tail str) :: Int)
+  _ -> Card str
 
 sparse :: String -> Stack
 sparse str = case str of
-  "Lib" -> Lib
-  "Hand"-> Hand
-  "Ing" -> Ing
-  "Rfp" -> Rfp
-  "Grv" -> Grv
-  _     -> NullSt
+  "Lib" -> (Lib,0)
+  "Hand"-> (Hand,0)
+  "Play" -> (VPlayed,0)
+  "Rfp" -> (VPlayed, 1)
+  "Grave" -> (VCards,0)
+  _     -> (NullS,0)
 
 playadv :: HidPlayer -> IO HidPlayer
 playadv hpl = do
-  newpl <- playturn $ Player_state ["<placeholder>"] [] hpl
+  newpl <- playturn $ Player_state [["<placeholder>"]] [] hpl
   return $ visible newpl
 
 playturn :: Player -> IO Player
@@ -36,11 +64,11 @@ playturn pl = do
     do
       line <- getLine
       let cmd = mparse line
-      putStr $ if cmd==Help then help else ""
-      if (cmd /= End) 
-        then playturn $ make_move pl cmd else return pl
-  where
-    help = "rcv_dmg <Amount>\ndraw <Amount>\nput <Card>\nmove <Card> <From> <To>\nhelp\nNames: Hand -> Hand, Ing -> In Game, Rfp -> Removed from play, Grv -> Graveyard\n"
+      putStr $ if cmd==Help then help_desc else ""
+      if cmd == End then return pl
+                    else let Core ccmd = cmd in playturn $ make_move pl ccmd
+
+help_desc = "suffer <Amount>\ndraw <Amount>\nmove <Card> <From> <To>\nhelp\nend - end turn\nNames: Hand -> Hand, Ing -> In Game, Rfp -> Removed from play, Grv -> Graveyard\n"
 
 
 credits :: Game -> IO Bool
