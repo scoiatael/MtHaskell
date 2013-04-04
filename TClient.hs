@@ -1,8 +1,12 @@
 module TClient where
 import Core
+import qualified Data.Map as DMap
+
+empty_played::[DMap.Map Int Played]
+empty_played = [DMap.empty, DMap.empty]
 
 newAdversary:: HidPlayer
-newAdversary = HidPlayer_state [empty_played] [[]] 20
+newAdversary = HidPlayer_state empty_played [[]] 20
 
 newPlayer :: String -> IO Player
 newPlayer str = 
@@ -24,28 +28,28 @@ type HidPlayer_move = HidPlayer -> CoreCommand -> HidPlayer
 make_shadow_move :: HidPlayer_move
 make_shadow_move arg cmd = visible $ make_move (Player_state [] [] arg) cmd
 
-data ClientCommand = Core CoreCommand | End | Help deriving (Eq)
+data ClientCommand = Core CoreCommand | End | Help deriving (Show, Eq)
 mparse :: String -> ClientCommand
 mparse str = let wrds = words str in case wrds !! 0 of
   "suffer" -> Core $ Receive_dmg (read (wrds !! 1) :: Int)
-  "draw" -> Core $ From_lib (read (wrds !! 1) :: Int) 0 (Hand, 0)
+  "draw" -> Core $ From_lib 0 (read (wrds !! 1) :: Int) (Hand, 0)
   "move" -> Core $ Move_card (cparse $ wrds !! 1) (sparse $ wrds !! 2) (sparse $ wrds !! 3)
   "help" -> Help
   "end" -> End
   otherwise -> Core $ NullC
 
 cparse :: String -> CardId
-cparse str = case str!!0 of
-  i -> Id (read (tail str) :: Int)
-  _ -> Card str
+cparse str = case str !! 0 of
+  'i' -> Id (read (tail str) :: Int)
+  otherwise -> Card str
 
 sparse :: String -> Stack
 sparse str = case str of
   "Lib" -> (Lib,0)
   "Hand"-> (Hand,0)
-  "Play" -> (VPlayed,0)
+  "Ing" -> (VPlayed,0)
   "Rfp" -> (VPlayed, 1)
-  "Grave" -> (VCards,0)
+  "Grv" -> (VCards,0)
   _     -> (NullS,0)
 
 playadv :: HidPlayer -> IO HidPlayer
@@ -64,6 +68,7 @@ playturn pl = do
     do
       line <- getLine
       let cmd = mparse line
+      print cmd
       putStr $ if cmd==Help then help_desc else ""
       if cmd == End then return pl
                     else let Core ccmd = cmd in playturn $ make_move pl ccmd
