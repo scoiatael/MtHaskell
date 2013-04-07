@@ -17,16 +17,18 @@ data Playedaux = Token Token | CardT Card deriving (Show)
 data CardId = Card Card | Id Int deriving (Show, Eq)
 data StackT = Lib | Hand | VPlayed | VCards | NullS deriving (Show, Eq, Ord)
 type Stack = (StackT, Int)
-data CoreCommand = Move_card {whichc::CardId, from_where::Stack, where_to::Stack} 
+
+data Command a b = Cmd { doCommand :: a -> Player -> b }
+  
+data CoreC = Move_card {whichc::CardId, from_where::Stack, where_to::Stack} 
         | Receive_dmg {how_much::Int} 
         | From_lib {whichs::Int, how_many::Int, where_to::Stack} 
         | Mod_state {whichs::Int, whichc::CardId, new_state::(Bool, [[Counter]])}
         | Add_token {whichs::Int, name::Token}
         | NullC deriving (Show, Eq)
 
-type Player_move = Player -> CoreCommand -> Player
-make_move :: Player_move
-make_move pl cmd = 
+doCoreC :: Command CoreC Player
+doCoreC = Cmd (\cmd -> \pl -> 
   case cmd of
     Receive_dmg dmg 
       -> Player_state (lib pl) (hand pl) 
@@ -40,7 +42,7 @@ make_move pl cmd =
          in Player_state (newlib) (newhand) (HidPlayer_state (newvplayed) (newvcards) (hp $ visible pl))
     From_lib whichl hmany wheret
       -> let (flibs, rlibs) = splitAt (whichl) (lib pl); clib = head rlibs; rest = tail rlibs; (draw, left) = splitAt hmany clib in 
-          foldr (\a b -> make_move b (Move_card (Card a) (NullS,0) wheret)) (Player_state (flibs ++ [left] ++ rest) (hand pl) (visible pl)) draw
+          foldr (\a b -> (doCommand doCoreC) (Move_card (Card a) (NullS,0) wheret) b) (Player_state (flibs ++ [left] ++ rest) (hand pl) (visible pl)) draw
     Mod_state ws wc (nt,nc)
       -> case wc of 
           Id i -> let (_,_,cardname) = ((vplayed $ visible pl) !! ws) DMap.! i in 
@@ -50,16 +52,12 @@ make_move pl cmd =
       -> aux_modvplayed (aux_insertp (False, [], Token t) (vplayed $ visible pl) ws) pl             
     otherwise
       -> pl
+  )
 
 aux_modvplayed :: [DMap.Map Int Played] -> Player -> Player
 aux_modvplayed nvp pl = 
-  Player_state
-    (lib pl)
-    (hand pl)
-    (HidPlayer_state
-      (nvp)
-      (vcards $ visible pl)
-      (hp $ visible pl))
+  let v = visible pl in
+    pl { visible = v { vplayed = nvp } }
 
 move_card :: CardId -> Player -> StackT -> Stack -> Stack -> [[Card]]
 move_card cid p w f t = let cstack = get_cstack p w 
@@ -120,10 +118,10 @@ aux_deletep :: Int -> [DMap.Map Int Played] -> Int -> [DMap.Map Int Played]
 aux_deletep id = aux_modlist (DMap.delete id)
 
 aux_insertp :: Played -> [DMap.Map Int Played] -> Int -> [DMap.Map Int Played]
-aux_insertp c = aux_modlist (\map -> DMap.insert ((+) 1 $ aux_genkey map) c map)
+aux_insertp c = aux_modlist (\map -> DMap.insert ((+) 1 $ aux_getkey map) c map)
 
-aux_genkey :: DMap.Map Int a -> Int
-aux_genkey m = (+) 1 $ if DMap.null m then 0 else fst $ head $ DMap.toDescList m
+aux_getkey :: DMap.Map Int a -> Int
+aux_getkey m = if DMap.null m then 0 else fst $ head $ DMap.toDescList m
 get_pstack :: Player -> StackT -> [DMap.Map Int Played]
 get_pstack pl st = case st of 
   VPlayed -> vplayed $ visible pl
