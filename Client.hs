@@ -1,7 +1,7 @@
 module Client where
 
 import Core
-import MtGClient (help_desc, mparse, player_alive, doClientC, newPlayer, newAdversary)
+import MtGClient (help_desc, mparse, player_alive, doClientC, ClientC, newPlayer, newAdversary, validateMove)
 import qualified Data.Map as DMap
 import Data.List (unfoldr)
 
@@ -22,16 +22,25 @@ playturn pl = do
   then
     do { return pl; }
   else
-    do
-      line <- getLine
-      let cmd = mparse line
-      print cmd
+    do {
+      cmd <- get_valid_command pl;
       (npl, cont) <- (doCommand doClientC) cmd pl
-      if cont 
-      then
-        do { playturn npl; }
-      else
-        do { return npl; }
+      ; if cont 
+          then
+            do { playturn npl; }
+          else
+            do { return npl; }
+    }
+
+get_valid_command :: Player -> IO ClientC
+get_valid_command pl = do {
+  line <- getLine
+  ; let cmd = mparse line
+  ; print cmd
+  ; case (doCommand validateMove) cmd pl of
+          Nothing -> do { return cmd; }
+          Just str -> do { putStr str; get_valid_command pl; }
+  }
 
 credits :: Game -> IO Bool
 credits g =
@@ -40,17 +49,14 @@ credits g =
     let ret2 = (adversary_alive $ adversary g)
     if ret1 && ret2
     then
-      do
-        return True
+      do { return True; }
     else
       do
         if ret1
         then 
-          do 
-            putStr "You Win!\n"
+          do { putStr "You Win!\n"; }
         else
-          do
-            putStr "You Lose!\n"
+          do { putStr "You Lose!\n";}
         return False
 
 play :: Game -> IO ()

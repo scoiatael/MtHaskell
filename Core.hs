@@ -7,6 +7,9 @@ data Game = Game_state {player::Player, adversary::HidPlayer}
 
 data Player = Player_state {lib::[[Card]], hand::[[Card]], visible::HidPlayer}
 empty = DMap.empty
+
+member :: Ord k => k -> DMap.Map k a -> Bool
+member = DMap.member
 data HidPlayer = HidPlayer_state {vplayed::[DMap.Map Int Played], vcards::[[Card]], hp::Int}
 instance Show HidPlayer where
   show hpl = "-->\n" ++ (show $ map DMap.toDescList $ vplayed hpl) ++ "\n" ++ (show $ vcards hpl) ++ "\nHP: " ++ (show $ hp hpl) ++ "\n"
@@ -70,15 +73,20 @@ aux_settap :: Bool -> Int -> CardId -> Player -> Player
 aux_settap st ws wc pl = 
   aux_modvplayed2 (\vpl -> let  (k, (_, cs, name)) = findplayed wc vpl in DMap.insert k (st, cs, name) vpl) pl ws
 
-findplayed :: CardId -> DMap.Map Int Played -> (Int, Played)
-findplayed c cs = case c of
-  Id i -> (i,cs DMap.! i)
+
+getplayedid :: CardId -> Int
+getplayedid c = case c of 
+  Id i -> i
   Card _ -> error "Card name instead of id given.\n"
 
-findcard :: CardId -> Card
-findcard cid = case cid of
+findplayed :: CardId -> DMap.Map Int Played -> (Int, Played)
+findplayed c cs = let id = getplayedid c in (id, cs DMap.! id)
+
+getcardname :: CardId -> Card
+getcardname cid = case cid of
   Id _ -> error "ID instead of card name given.\n"
   Card c -> c
+
 aux_modvplayed2 :: (DMap.Map Int Played -> DMap.Map Int Played) -> Player -> Int -> Player
 aux_modvplayed2 f pl i =
   let v = visible pl in
@@ -102,7 +110,7 @@ move_card cid p w f t = let cstack = get_cstack p w
                 CardT name -> aux_insertcard name cstack (snd t)
                 Token t   -> cstack      
        otherwise
-        -> let c = findcard cid 
+        -> let c = getcardname cid 
             in 
               let cinstack = if (fst t) == w then aux_insertcard c cstack (snd t) else cstack
                 in 
@@ -130,7 +138,7 @@ move_played cid p w f t = let pstack = get_pstack p w
   else if (fst f) == w 
     then 
       let (id,pl) = findplayed cid (pstack !! (snd f)) in aux_deletep id (if (fst t) == w then aux_insertp pl pstack (snd t) else pstack) (snd f)
-    else let c = findcard cid in aux_insertp (False, [], CardT c) pstack (snd t)
+    else let c = getcardname cid in aux_insertp (False, [], CardT c) pstack (snd t)
   
 aux_deletep :: Int -> [DMap.Map Int Played] -> Int -> [DMap.Map Int Played]
 aux_deletep id = aux_modlist (DMap.delete id)

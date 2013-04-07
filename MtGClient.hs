@@ -60,3 +60,30 @@ sparse str = case str of
   _     -> (NullS,0)
 
 help_desc = "suffer <Amount>\ndraw <Amount>\nmove <Card> <From> <To>\nhelp\nend\nshuffle <Int>\natoken <To> <Name>\nmstate <Int> <Card> <NewState>\nNames: Hand -> Hand, Ing -> In Game, Rfp -> Removed from play, Grv -> Graveyard\n"
+
+validateMove :: Command ClientC (Maybe String)
+validateMove = Cmd (\cmd -> \pl -> 
+  case cmd of 
+    Core ccmd -> case ccmd of
+      Tap ws wc -> target_exists wc (VPlayed, ws) pl
+      Untap ws wc -> target_exists wc (VPlayed, ws) pl
+      Add_counter ws wc _ -> target_exists wc (VPlayed, ws) pl
+      Del_counter ws wc _ -> target_exists wc (VPlayed, ws) pl
+      Add_token ws _ -> if ws > 1 then Just "No such stack.\n" else Nothing
+      From_lib wl wm _ -> if (length ((lib pl) !! wl)) < wm then Just "Not enough cards in library.\n" else Nothing
+      Move_card wc f _ -> target_exists wc f pl
+      otherwise -> Nothing
+    otherwise -> Nothing
+  )
+
+target_exists :: CardId -> Stack -> Player -> Maybe String
+target_exists cid st pl = 
+  case st of 
+    (VPlayed, i) 
+      -> if i > 1 then Just "No such stack.\n" else if (getplayedid cid) `member` ((vplayed $ visible pl)!!i) then Nothing else Just "No such target.\n"
+    (VCards, i) 
+      -> if i > 0 then Just "No such stack.\n" else if (getcardname cid) `elem` ((vcards $ visible pl)!!i) then Nothing else Just "No such target.\n"
+    (Hand, i) 
+      -> if i > 0 then Just "No such stack.\n" else if (getcardname cid) `elem` ((hand pl)!!i) then Nothing else Just "No such target.\n"
+    otherwise 
+      -> Just "Bad stack.\n"
