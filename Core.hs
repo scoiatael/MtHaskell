@@ -1,11 +1,12 @@
 module Core where
 
-import Data.List (insert, delete, elem)
+import Data.List (insert, delete, elem, unfoldr)
 import qualified Data.Map as DMap
 
 data Game = Game_state {player::Player, adversary::HidPlayer}
 
 data Player = Player_state {lib::[[Card]], hand::[[Card]], visible::HidPlayer} deriving Show
+empty = DMap.empty
 data HidPlayer = HidPlayer_state {vplayed::[DMap.Map Int Played], vcards::[[Card]], hp::Int} deriving Show
 type Card = String
 type Token = String
@@ -127,3 +128,15 @@ get_pstack pl st = case st of
   VPlayed -> vplayed $ visible pl
   _       -> error "Wrong StackT at get_pstack!\n"
 
+shuffle :: Player -> Int -> Player
+shuffle pl hash = pl { lib = map (randomShuffleList hash) (lib pl) }
+
+randomShuffleList :: Int -> [a] -> [a]
+randomShuffleList h ls = let lls = length ls in foldl (flip auxswap) ls (genRandomNumberList h lls)
+
+genRandomNumberList :: Int -> Int -> [Int]
+genRandomNumberList h lls =  map (`mod` (lls-1)) $ take lls $ unfoldr (\x -> Just (x, (1664525*x + 1013904223) `mod `(2^32))) (h`mod`(2^32))
+
+auxswap :: Int -> [a] -> [a]
+auxswap n [] = []
+auxswap n (x:xs) = let (l,(r:rs)) = splitAt n xs in r:(l ++ (x:rs))

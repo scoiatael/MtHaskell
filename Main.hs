@@ -1,5 +1,4 @@
-import Core
-import TClient
+import Client
 import Data.Char (toUpper)
 
 main = do
