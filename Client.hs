@@ -57,7 +57,7 @@ play :: Game -> IO ()
 play game = 
   do
     putStr "Adversary turn\n---\n"
-    newadv <- playadv $ adversary game
+    let newadv = adversary game
     r1 <- credits (Game_state (player game) newadv)
     if not r1 
     then 
