@@ -16,7 +16,7 @@ instance Show HidPlayer where
 type Card = String
 type Token = String
 type Counter = String
-type Played = (Bool, [Counter], Playedaux)
+type Played = ([Bool], [Counter], Playedaux)
 
 data Playedaux = Token Token | CardT Card deriving (Show)
 
@@ -31,8 +31,8 @@ data CoreC = Move_card {whichc::CardId, from_where::Stack, where_to::Stack}
         | From_lib {whichs::Int, how_many::Int, where_to::Stack} 
         | Add_counter {whichs::Int, whichc::CardId, counter::Counter}
         | Del_counter {whichs::Int, whichc::CardId, counter::Counter}
-        | Tap {whichs::Int, whichc::CardId}
-        | Untap {whichs::Int, whichc::CardId}
+        | Tap {whichs::Int, whichc::CardId, whicht::Int}
+        | Untap {whichs::Int, whichc::CardId, whicht::Int}
         | Add_token {whichs::Int, name::Token}
         | NullC deriving (Show, Eq)
 
@@ -52,10 +52,10 @@ doCoreC = Cmd (\cmd -> \pl ->
     From_lib whichl hmany wheret
       -> let (flibs, rlibs) = splitAt (whichl) (lib pl); clib = head rlibs; rest = tail rlibs; (draw, left) = splitAt hmany clib in 
           foldr (\a b -> (doCommand doCoreC) (Move_card (Card a) (NullS,0) wheret) b) (Player_state (flibs ++ [left] ++ rest) (hand pl) (visible pl)) draw
-    Tap ws wc  
-      -> aux_settap True ws wc pl
-    Untap ws wc  
-      -> aux_settap False ws wc pl
+    Tap ws wc wt
+      -> aux_settap True ws wc wt pl
+    Untap ws wc wt
+      -> aux_settap False ws wc wt pl
     Add_counter ws wc ct
       -> aux_chcts ws wc (insert ct) pl
     Del_counter ws wc ct 
@@ -69,9 +69,10 @@ doCoreC = Cmd (\cmd -> \pl ->
 aux_chcts :: Int -> CardId -> ([Counter] -> [Counter]) -> Player -> Player
 aux_chcts ws wc f pl = aux_modvplayed2 (\vpl -> let (k, (t, cs, name)) = findplayed wc vpl in DMap.insert k (t, f cs,name) vpl) pl ws 
 
-aux_settap :: Bool -> Int -> CardId -> Player -> Player
-aux_settap st ws wc pl = 
-  aux_modvplayed2 (\vpl -> let  (k, (_, cs, name)) = findplayed wc vpl in DMap.insert k (st, cs, name) vpl) pl ws
+aux_settap :: Bool -> Int -> CardId -> Int -> Player -> Player
+aux_settap st ws wc wt pl = 
+  aux_modvplayed2 (\vpl -> let  (k, (l, cs, name)) = findplayed wc vpl in 
+    DMap.insert k (aux_modlist (\_ -> st) l wt, cs, name) vpl) pl ws
 
 
 getplayedid :: CardId -> Int
