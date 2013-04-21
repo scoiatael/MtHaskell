@@ -1,6 +1,6 @@
-module Client where
+module GameClient where
 
-import Core
+import GameCore
 import MtGClient (help_desc, mparse, player_alive, doClientC, ClientC, newPlayer, newAdversary, validateMove)
 import qualified Data.Map as DMap
 import Data.List (unfoldr)

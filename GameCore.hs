@@ -1,4 +1,4 @@
-module Core where
+module GameCore where
 
 import Data.List (insert, delete, elem, unfoldr)
 import qualified Data.Map as DMap
@@ -61,7 +61,7 @@ doCoreC = Cmd (\cmd -> \pl ->
     Del_counter ws wc ct 
       -> aux_chcts ws wc (delete ct) pl
     Add_token ws t  
-      -> aux_modvplayed (aux_insertp (False, [], Token t) (vplayed $ visible pl) ws) pl             
+      -> aux_modvplayed (aux_insertp ([False], [], Token t) (vplayed $ visible pl) ws) pl             
     otherwise
       -> pl
   )
@@ -139,7 +139,7 @@ move_played cid p w f t = let pstack = get_pstack p w
   else if (fst f) == w 
     then 
       let (id,pl) = findplayed cid (pstack !! (snd f)) in aux_deletep id (if (fst t) == w then aux_insertp pl pstack (snd t) else pstack) (snd f)
-    else let c = getcardname cid in aux_insertp (False, [], CardT c) pstack (snd t)
+    else let c = getcardname cid in aux_insertp ([False], [], CardT c) pstack (snd t)
   
 aux_deletep :: Int -> [DMap.Map Int Played] -> Int -> [DMap.Map Int Played]
 aux_deletep id = aux_modlist (DMap.delete id)

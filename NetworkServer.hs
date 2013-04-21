@@ -10,6 +10,9 @@ import Control.Monad
 import Control.Monad.Fix (fix)
 import System.Environment (getArgs, getProgName)
 import Control.Exception
+
+
+module NetworkServer where
  
 type Msg = (Int, String)
  

@@ -1,5 +1,5 @@
 module MtGClient where
-import Core
+import GameCore
 
 -- MtG specific - whole module
 empty_played = [empty, empty]
@@ -39,8 +39,8 @@ mparse str = let wrds = words str in case wrds !! 0 of
   "end" -> End
   "shuffle" -> Shuffle (read $ wrds !! 1 :: Int)
   "atoken" -> Core $ Add_token (read $ wrds !! 1 :: Int) (wrds !! 2)
-  "tap" -> Core $ Tap (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2)
-  "untap" -> Core $ Untap (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2)
+  "tap" -> Core $ Tap (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2) 0
+  "untap" -> Core $ Untap (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2) 0
   "acounter" -> Core $ Add_counter (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2) (wrds !! 3)
   "dcounter" -> Core $ Del_counter (read $ wrds !! 1 :: Int) (cparse $ wrds !! 2) (wrds !! 3)
   otherwise -> Core $ NullC
@@ -65,8 +65,8 @@ validateMove :: Command ClientC (Maybe String)
 validateMove = Cmd (\cmd -> \pl -> 
   case cmd of 
     Core ccmd -> case ccmd of
-      Tap ws wc -> target_exists wc (VPlayed, ws) pl
-      Untap ws wc -> target_exists wc (VPlayed, ws) pl
+      Tap ws wc _ -> target_exists wc (VPlayed, ws) pl
+      Untap ws wc  _-> target_exists wc (VPlayed, ws) pl
       Add_counter ws wc _ -> target_exists wc (VPlayed, ws) pl
       Del_counter ws wc _ -> target_exists wc (VPlayed, ws) pl
       Add_token ws _ -> if ws > 1 then Just "No such stack.\n" else Nothing

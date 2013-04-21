@@ -1,4 +1,6 @@
-import Client
+module CLIMain where
+
+import GameClient
 import Data.Char (toUpper)
 
 main = do

@@ -6,6 +6,8 @@ import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.MVar
 
+module NetworkClient where
+
 main = withSocketsDo $ do
   args <- getArgs
   if (length args) < 3 then do { name <- getProgName; printUsage name;} else do 
