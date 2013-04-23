@@ -1,0 +1,9 @@
+Name: mth
+Version: 1.0.0
+Build-type: Simple
+Build-Depends: network, base, gtk, glade, containers
+Data-files: mthresources.glade
+
+Executable: mth
+Main-Is: Main.hs
+GHC-Options: -O2

@@ -2,9 +2,12 @@ import qualified GUIMain
 import qualified CLIMain
 import Network.Socket (withSocketsDo)
 import System.Environment (getArgs)
+import Paths_mth(getDataFileName)
 
 main = withSocketsDo $ do
   args <- getArgs
   if (head args) == "--cli" 
     then CLIMain.main (tail args)
-    else GUIMain args
+    else do {
+      gladepaths <- getDataFileName "mthresources.glade"; 
+      GUIMain.main args gladepaths; }

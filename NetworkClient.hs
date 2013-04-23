@@ -1,3 +1,6 @@
+
+module NetworkClient where
+
 import Network
 import System.IO
 import System.Environment (getProgName)
@@ -7,8 +10,6 @@ import Control.Concurrent
 import Control.Concurrent.MVar
 import qualified MyIOLib
 
-module NetworkClient where
-
 startGame = startChat 
 
 startChat hostname port (hin, hout) = do
@@ -16,17 +17,17 @@ startChat hostname port (hin, hout) = do
     hSetBuffering h NoBuffering
     putStr "\n[q]uit to quit.\n"
     sem <- newEmptyMVar
-    reader <- forkIO $ mainRWLoop (MyIOLib.handletToInputF h) hout sem
-    mainRWLoop hin (MyIOLib.handletToOutputF h) sem
+    reader <- forkIO $ mainRWLoop (MyIOLib.handleToInputF h) hout sem
+    mainRWLoop hin (MyIOLib.handleToOutputF h) sem
     putStrLn "Bye then."
     killThread reader
     hClose h
 
-mainRWLoop :: MyIOLib.InputF -> MyIOLib.OutputF -> IO ()
+mainRWLoop :: MyIOLib.InputF -> MyIOLib.OutputF -> (MVar ()) ->  IO ()
 mainRWLoop hin hout sem = fix $ \loop -> do { 
   yield;
   mstring <- hin 100; 
-  process mstring
+  process mstring;
   cont <- isEmptyMVar sem;
   when cont loop }
   where

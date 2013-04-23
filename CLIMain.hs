@@ -3,11 +3,13 @@ module CLIMain where
 import GameClient
 import Data.Char (toUpper)
 import NetworkClient
+import System.Environment
+import MyIOLib
+import Network
+import Control.Monad (when)
 
 main :: [String] -> MyIOLib.InputF -> MyIOLib.OutputF -> IO ()
-
-
-main args = do
+main args hin hout = do
   if (length args) < 3 then do { name <- getProgName; printUsage name;} else do 
     let hostname = (args !! 1)
     let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
@@ -20,9 +22,9 @@ main args = do
   putStr "Play again? Y/N\n"
   line <- getLine
   if (toUpper (line !! 0)) == 'Y'
-  then 
-    do
-      main
-  else
-    do
-      putStr "Bye then..\n"
+    then 
+      do
+        main args hin hout
+    else
+      do
+        putStr "Bye then..\n"
