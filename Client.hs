@@ -28,10 +28,8 @@ startGame sconn cconn = do {
   return $ CR $ onClientInput sconn cconn gsptr }
 
 startChat :: ServerConnection -> ClientConnection -> IO ClientReaction
-startChat hostname port (hin, hout) = do
-    h <- connectTo hostname port
-    hSetBuffering h NoBuffering
-    putStr "\n[q]uit to quit.\n"
+startChat sconn cconn = do
+    send cconn $ "\n[q]uit to quit.\n"
     sem <- newEmptyMVar
     reader <- forkIO $ mainRWLoop (MyIOLib.handleToInputF h) hout sem
     mainRWLoop hin (MyIOLib.handleToOutputF h) sem
@@ -63,7 +61,7 @@ onClientInput servhandle clienthandle gsptr inpt = do {
   case checkIfValidMove scmd of 
     Right gdcmd -> do { send servhandle $ gdcmd; }
     Left errorstr -> do { send clienthandle $ errorstr; }; }
-
+{--
 --Reaction to input server side
 onServerInput :: ServerConnection -> ClientConnection -> MVar GameState -> Input -> IO ()
 onServerInput servhandle clienthandle gsptr inpt = do {
@@ -72,3 +70,4 @@ onServerInput servhandle clienthandle gsptr inpt = do {
   gccmd <- executeServerCmd serverhandle clienthandle cmd;
   let newgs = executeGameMove gs cmd;
   putMVar gsptr newgs; }
+--}

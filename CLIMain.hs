@@ -21,12 +21,12 @@ main progName args = do
       let hostname = (args !! 2)
       if (length args) < 4 then printUsage progName else do {
         let port = (PortNumber $ toEnum (read (args !! 3) :: Int));
-        when ( ctype == "chat") $ Client.mainChat hout hostname port;
-        when ( ctype == "game") $ Client.mainGame hout hostname port; }; }
+        if ( ctype == "chat") then Client.mainChat hout hostname port;
+          else Client.mainGame hout hostname port; }; }
     when ( stype == "server") $ do {
       let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
-      when ( ctype == "chat") $ Server.mainChat hout port;
-      when ( ctype == "game") $ Server.mainGame hout port; }
+      if ( ctype == "chat") then Server.mainChat hout port;
+        else Server.mainGame hout port; }
 
 {--
   newgame <- startNewGame

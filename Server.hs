@@ -1,5 +1,5 @@
--- with apologies for the lack of comments :)
  
+module Server where
 import Network
 import System.IO
 import Control.Exception
@@ -12,7 +12,6 @@ import System.Environment (getArgs, getProgName)
 import Control.Exception
 
 
-module Server where
  
 type Msg = (Int, String)
 {-- 
