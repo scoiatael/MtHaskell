@@ -6,7 +6,7 @@ import Paths_mth(getDataFileName)
 
 main = withSocketsDo $ do
   args <- getArgs
-  if (head args) == "--cli" 
+  if ((length args) /= 0) && (head args) == "--cli" 
     then CLIMain.main (tail args)
     else do {
       gladepaths <- getDataFileName "mthresources.glade"; 

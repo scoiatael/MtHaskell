@@ -9,16 +9,14 @@ import Control.Concurrent
 
 data GUI = GUI { window :: Window, readerText :: TextView, readerEntry :: Entry, writerText:: TextView, writerEntry :: Entry}
 
-main = do
-  args <- getArgs
-  if length args < 1 then do { pName <- getProgName; printUsage pName; } else do
-    initGUI
-    timeoutAddFull (yield >> return True)
-                    priorityDefaultIdle 100
-    gui <- loadGlade (args !! 0)
-    connectGUI gui
-    widgetShowAll ( window gui )
-    mainGUI
+main args guipath = do
+  initGUI
+  timeoutAddFull (yield >> return True)
+                  priorityDefaultIdle 100
+  gui <- loadGlade guipath
+  connectGUI gui
+  widgetShowAll ( window gui )
+  mainGUI
 
 printUsage pn = do
   putStrLn $ "Usage: " ++ pn ++ " <guifile>"
