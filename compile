@@ -1,4 +1,0 @@
-ghc -O3 --make CLIMain.hs
-
-rm *.o
-rm *.hi

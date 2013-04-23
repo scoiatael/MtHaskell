@@ -3,22 +3,31 @@ module CLIMain where
 import GameClient
 import Data.Char (toUpper)
 import NetworkClient
+import qualified Server
+import qualified Client
 import System.Environment
 import System.IO (stdin, stdout)
 import MyIOLib
 import Network
 import Control.Monad (when)
 
-main :: [String] -> IO ()
-main args = do
-  if (length args) < 3 then do { name <- getProgName; printUsage name;} else do 
-    let hostname = (args !! 1)
-    let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
-    let ctype = args !! 0
-    let hin = MyIOLib.handleToInputF stdin
-    let hout = MyIOLib.handleToOutputF stdout
-    when ( ctype == "chat") $ startChat hostname port (hin, hout)
-    when ( ctype == "game") $ startGame hostname port (hin, hout)
+main :: String -> [String] -> IO ()
+main progName args = do
+  if (length args) < 3 then printUsage progName else do 
+    let ctype = args !! 1
+    let stype = args !! 0
+    let hout = stdinToClientConnection
+    when ( stype == "client") $ do {
+      let hostname = (args !! 2)
+      if (length args) < 4 then printUsage progName else do {
+        let port = (PortNumber $ toEnum (read (args !! 3) :: Int));
+        when ( ctype == "chat") $ Client.mainChat hout hostname port;
+        when ( ctype == "game") $ Client.mainGame hout hostname port; }; }
+    when ( stype == "server") $ do {
+      let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
+      when ( ctype == "chat") $ Server.mainChat hout port;
+      when ( ctype == "game") $ Server.mainGame hout port; }
+
 {--
   newgame <- startNewGame
   play newgame

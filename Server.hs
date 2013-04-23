@@ -12,10 +12,10 @@ import System.Environment (getArgs, getProgName)
 import Control.Exception
 
 
-module NetworkServer where
+module Server where
  
 type Msg = (Int, String)
- 
+{-- 
 main :: IO ()
 main = do
     args <- getArgs
@@ -27,6 +27,7 @@ main = do
         mainChat portnr
     when (stype=="game") $
         mainGame portnr
+--}
 {--
     sock <- socket AF_INET Stream 0
     setSocketOption sock ReuseAddr 1
@@ -57,10 +58,10 @@ startGame (pl1, hdl1) (pl2, hdl2) = do
   putStrLn ("Player2: " ++ (show thr2))
   void $ takeMVar sem
   putStrLn "Ending game.."
-  endConnection hdl1;
-  endConnection hdl2;
   safeKillThread thr1
   safeKillThread thr2
+  endConnection hdl1;
+  endConnection hdl2;
   where
     simplicityWrap phdl hdl sem pl = 
       forkIO $ do {forwardInfo phdl hdl sem; putStrLn (pl ++ " left"); putMVar sem();} `catch` exceptionHandler
