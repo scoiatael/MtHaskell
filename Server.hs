@@ -9,9 +9,8 @@ import Control.Concurrent.MVar
 import Control.Monad
 import Control.Monad.Fix (fix)
 import System.Environment (getArgs, getProgName)
-import Control.Exception
 
-
+import MyIOLib
  
 type Msg = (Int, String)
 {-- 
@@ -66,9 +65,6 @@ startGame (pl1, hdl1) (pl2, hdl2) = do
       forkIO $ do {forwardInfo phdl hdl sem; putStrLn (pl ++ " left"); putMVar sem();} `catch` exceptionHandler
     safeKillThread tid = do { putStrLn ("Killing " ++ (show tid)); killThread tid;}
 
-exceptionHandler :: SomeException -> IO ()
-exceptionHandler e = do {putStr "Error ignored: "; print $ toException e;}
-
 forwardInfo (fpl, fhdl) thdl sem = do
   hPutStrLn fhdl "ping"
   move <- hGetLine fhdl
@@ -77,11 +73,6 @@ forwardInfo (fpl, fhdl) thdl sem = do
   when okmove $ hPutStrLn thdl move
   when (not okmove) $ hPutStrLn fhdl "bad move"
   when (move /= "quit") $ forwardInfo (fpl', fhdl) thdl sem
-
-endConnection hdl = do
-  putStrLn "Quitting connection..."
-  isOpen <- hIsOpen hdl
-  when isOpen $ do { hPutStrLn hdl "__quit__"; putStrLn "sent goodbyes..";  hClose hdl} `catch` exceptionHandler
 
 validMove _ _ = ("", True)
   

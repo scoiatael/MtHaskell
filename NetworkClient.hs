@@ -26,7 +26,7 @@ startChat hostname port (hin, hout) = do
 mainRWLoop :: MyIOLib.InputF -> MyIOLib.OutputF -> (MVar ()) ->  IO ()
 mainRWLoop hin hout sem = fix $ \loop -> do { 
   yield;
-  mstring <- hin 100; 
+  mstring <- hin; 
   process mstring;
   cont <- isEmptyMVar sem;
   when cont loop }

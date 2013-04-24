@@ -1,5 +1,5 @@
 module MtGClient where
-import GameCore
+import Core
 
 -- MtG specific - whole module
 empty_played = [empty, empty]
