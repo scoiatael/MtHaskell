@@ -6,15 +6,11 @@ import qualified Data.Map as DMap
 import Data.List (unfoldr)
 
 -- placeholders
-playadv :: HidPlayer -> IO HidPlayer
-playadv hpl = do
-  newpl <- playturn $ Player_state [["<placeholder>"]] [] hpl
-  return $ visible newpl
 
 adversary_alive :: HidPlayer -> Bool
 adversary_alive hpl = (hp hpl) > 0
 --
-
+{--
 playturn :: Player -> IO Player
 playturn pl = do
   print pl
@@ -30,7 +26,7 @@ playturn pl = do
               do { playturn npl; }
             else
               do { return npl; }; }
-
+--}
 get_valid_command :: Player -> IO ClientC
 get_valid_command pl = do {
   line <- getLine
@@ -41,6 +37,7 @@ get_valid_command pl = do {
           Just str -> do { putStr str; get_valid_command pl; }
   }
 
+{--
 credits :: Game -> IO Bool
 credits g =
   do
@@ -91,4 +88,4 @@ startNewGame = do
                         (newAdversary)
   putStr help_desc
   return game
-
+--}

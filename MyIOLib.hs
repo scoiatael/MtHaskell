@@ -12,8 +12,8 @@ data ClientConnection = CConn { csend :: OutputF, cquit :: IO () }
 data ServerConnection = SConn { ssend :: OutputF, squit :: IO (), sget :: InputF }
 
 type Reaction = Input -> IO ()
-newtype ClientReaction = CR Reaction
-newtype ServerReaction = SR Reaction 
+newtype ClientReaction = CR { cdoReact :: Reaction}
+newtype ServerReaction = SR { sdoReact :: Reaction} 
 
 handleToInputF h = do {
   ready <- hWaitForInput h 100;
@@ -34,3 +34,4 @@ endConnection hdl = do
 exceptionHandler :: SomeException -> IO ()
 exceptionHandler e = do {putStr "Error ignored: "; print $ toException e;}
 
+stdinToClientConnection = CConn (handleToOutputF stdin) (putStrLn "Bye then..")

@@ -33,37 +33,37 @@ main = do
     listen sock 2
 --}
 
-mainGame port = do
-  putStrLn "Starting game server..."
+mainGame cconn port = do
+  (csend cconn) "Starting game server..."
   sock <- listenOn port
   (hdl1, _, _) <- accept sock
-  putStrLn "Got first player"
+  (csend cconn) "Got first player"
   hSetBuffering hdl1 NoBuffering
   player1 <- loadPlayer hdl1
   (hdl2, _, _) <- accept sock
-  putStrLn "Got second player"
+  (csend cconn) "Got second player"
   hSetBuffering hdl2 NoBuffering
   player2 <- loadPlayer hdl2
-  startGame (player1, hdl1) (player2, hdl2)
+  startGame cconn (player1, hdl1) (player2, hdl2)
 
 loadPlayer hdl = return ""
 
-startGame (pl1, hdl1) (pl2, hdl2) = do
+startGame cconn (pl1, hdl1) (pl2, hdl2) = do
   sem <- newEmptyMVar
   thr1 <- simplicityWrap (pl1, hdl1) hdl2 sem "Player1"
-  putStrLn ("Player1: " ++ (show thr1))
+  (csend cconn) ("Player1: " ++ (show thr1))
   thr2 <- simplicityWrap (pl2, hdl2) hdl1 sem "Player2"
-  putStrLn ("Player2: " ++ (show thr2))
+  (csend cconn) ("Player2: " ++ (show thr2))
   void $ takeMVar sem
-  putStrLn "Ending game.."
+  (csend cconn) "Ending game.."
   safeKillThread thr1
   safeKillThread thr2
   endConnection hdl1;
   endConnection hdl2;
   where
     simplicityWrap phdl hdl sem pl = 
-      forkIO $ do {forwardInfo phdl hdl sem; putStrLn (pl ++ " left"); putMVar sem();} `catch` exceptionHandler
-    safeKillThread tid = do { putStrLn ("Killing " ++ (show tid)); killThread tid;}
+      forkIO $ do {forwardInfo phdl hdl sem; (csend cconn) (pl ++ " left"); putMVar sem();} `catch` exceptionHandler
+    safeKillThread tid = do { (csend cconn) ("Killing " ++ (show tid)); killThread tid;}
 
 forwardInfo (fpl, fhdl) thdl sem = do
   hPutStrLn fhdl "ping"
@@ -76,12 +76,12 @@ forwardInfo (fpl, fhdl) thdl sem = do
 
 validMove _ _ = ("", True)
   
-mainChat port = do
+mainChat cconn port = do
     chan <- newChan
     sock <- listenOn port
     forkIO $ fix $ \loop -> do
         (_, msg) <- readChan chan
-        putStrLn msg
+        (csend cconn) msg
         loop
     mainLoop sock chan 0
  

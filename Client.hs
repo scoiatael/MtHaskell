@@ -10,6 +10,12 @@ import Control.Concurrent.MVar
 import MyIOLib
 import Core
 
+mainGame :: ClientConnection -> HostName -> PortID -> IO ClientReaction
+mainGame cconn host port = do 
+  h <- connectTo host port
+  hSetBuffering h NoBuffering
+  startChat (handleToServerConnection h) cconn 
+
 startGame :: ServerConnection -> ClientConnection -> IO ClientReaction
 startGame sconn cconn = do {
   gsptr <- newEmptyMVar;
@@ -18,8 +24,8 @@ startGame sconn cconn = do {
 --  putMVar gsptr $ gameState (playerFromDeck playerDeck, advFromDeck advDeck);
   return $ CR $ onClientInput sconn cconn gsptr }
 
-mainChat :: HostName -> PortID -> ClientConnection -> IO ClientReaction
-mainChat host port hout = do
+mainChat :: ClientConnection -> HostName -> PortID -> IO ClientReaction
+mainChat hout host port = do
   h <- connectTo host port
   hSetBuffering h NoBuffering
   startChat (handleToServerConnection h) hout 
@@ -44,7 +50,6 @@ mainRWLoop hin hout sem = fix $ \loop -> do {
       when (cont == "quit") $ do { void $ tryTakeMVar sem; putMVar sem (); };
       hout cont; }; 
 
-printUsage name = putStr (name ++ " { chat | game } <hostname> <port>\n")
 
 --Reaction to input client side
 onClientInput :: ServerConnection -> ClientConnection -> MVar Core.GameState -> Input -> IO ()

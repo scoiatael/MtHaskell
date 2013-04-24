@@ -1,5 +1,8 @@
-
 module GUIMain where
+
+import qualified Client
+import qualified Server
+import MyIOLib
 
 import System.Environment (getProgName, getArgs)
 import Graphics.UI.Gtk hiding (disconnect)
@@ -7,35 +10,51 @@ import Graphics.UI.Gtk.Glade
 import Control.Monad (void, when)
 import Control.Concurrent
 import Control.Concurrent.MVar
+import Network
 
 data GUI = GUI { window :: Window, text :: TextView, entry :: Entry, sem :: MVar Int}
 
-main progname args guipath = do
+main progName args guipath = do
   initGUI
   gui <- loadGlade guipath
   connectGUI gui
   widgetShowAll ( window gui )
-  if (length args) < 3 then printUsage progName else do 
-    let ctype = args !! 1
+  if (length args) < 3 then do { printUsage progName; error "More args please" } else do 
     let stype = args !! 0
-    let hout = addTextToBuffer (text gui)
-    when ( stype == "client") $ do {
-      let hostname = (args !! 2)
-      if (length args) < 4 then printUsage progName else do {
-        let port = (PortNumber $ toEnum (read (args !! 3) :: Int));
-        if ( ctype == "chat") then clientChat hout hostname port gui;
-          else Client.mainGame hout hostname port gui; }; }
-    when ( stype == "server") $ do {
-      let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
-      if ( ctype == "chat") then Server.mainChat hout port gui;
-        else Server.mainGame hout port gui; }
+    let hout = CConn (addTextToBuffer (text gui)) (addTextToBuffer (text gui) "Bye then..")
+    when ( stype == "client") $ if (length args) < 4 
+      then printUsage progName
+      else clientPart gui hout
+    when ( stype == "server") $ serverPart gui hout
   mainGUI
-
-clientChat hout hostname port = do
-  hin <- Client.mainChat hout hostname port
-  connectClientChatGUI hin
   where
-    connectClientChatGUI f = void $ afterEntryActivate (entry gui) do {f; clearEntryIf (entry gui) (sem gui)}
+    clientPart gui hout = do
+      let hostname = (args !! 2)
+      let port = (PortNumber $ toEnum (read (args !! 3) :: Int))
+      let ctype = args !! 1
+      if ( ctype == "chat") 
+        then clientChat hout hostname port gui
+        else clientGame hout hostname port gui
+    serverPart gui hout = do
+      let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
+      let ctype = args !! 1
+      if ( ctype == "chat") 
+        then Server.mainChat hout port
+        else Server.mainGame hout port
+
+clientChat hout hostname port gui = do
+  hin <- Client.mainChat hout hostname port
+  connectClientChatGUI hin gui
+
+connectClientChatGUI f gui = 
+  void $ afterEntryActivate (entry gui) $ 
+    do {text <- entryGetText (entry gui); cdoReact f $ text; clearEntryIf (entry gui) (sem gui);}
+
+clientGame hout hostname port gui = do
+  hin <- Client.mainGame hout hostname port
+  connectClientGameGUI hin gui
+
+connectClientGameGUI = connectClientChatGUI
 
 printUsage pn = do
   putStrLn $ "Usage: " ++ pn ++ " <guifile>"
@@ -48,7 +67,7 @@ connectGUI g = do
       buffer <- textViewGetBuffer textview;
       endIter <- textBufferGetEndIter buffer;
       void $ textBufferCreateMark buffer (Just "end") endIter False; 
-      void $ afterEntryActivate entry (addTextToBuffer entry textview sem); 
+      void $ afterEntryActivate entry (addTextFromEntry entry textview sem); 
       }
 
 

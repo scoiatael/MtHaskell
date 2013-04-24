@@ -1,32 +1,48 @@
 module CLIMain where
 
-import GameClient
-import Data.Char (toUpper)
-import NetworkClient
 import qualified Server
 import qualified Client
+import MyIOLib
+import GameClient
+
+import Data.Char (toUpper)
 import System.Environment
 import System.IO (stdin, stdout)
-import MyIOLib
 import Network
 import Control.Monad (when)
+import Control.Monad.Fix (fix)
 
 main :: String -> [String] -> IO ()
 main progName args = do
   if (length args) < 3 then printUsage progName else do 
-    let ctype = args !! 1
     let stype = args !! 0
-    let hout = stdinToClientConnection
-    when ( stype == "client") $ do {
-      let hostname = (args !! 2)
-      if (length args) < 4 then printUsage progName else do {
-        let port = (PortNumber $ toEnum (read (args !! 3) :: Int));
-        if ( ctype == "chat") then Client.mainChat hout hostname port;
-          else Client.mainGame hout hostname port; }; }
-    when ( stype == "server") $ do {
+    when ( stype == "client") $ if (length args) < 4 then printUsage progName else clientPart
+    when ( stype == "server") serverPart
+  where
+    clientPart = do
+      let hout = stdinToClientConnection
+      let ctype = args !! 1
+      let hostname = args !! 2
+      let port = (PortNumber $ toEnum (read (args !! 3) :: Int))
+      if ( ctype == "chat") 
+        then mainCChat hout hostname port
+        else mainCGame hout hostname port
+    serverPart = do
+      let hout = stdinToClientConnection
+      let ctype = args !! 1
+      let stype = args !! 0
       let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
-      if ( ctype == "chat") then Server.mainChat hout port;
-        else Server.mainGame hout port; }
+      if ( ctype == "chat") 
+        then Server.mainChat hout port
+        else Server.mainGame hout port
+
+mainCChat hout hostname port = do
+  creact <- Client.mainChat hout hostname port
+  fix $ \loop -> do { line <- getLine; cdoReact creact $ line; loop }
+
+mainCGame _ _ _ = putStr ""
+
+printUsage name = putStr (name ++ " { chat | game } <hostname> <port>\n")
 
 {--
   newgame <- startNewGame
