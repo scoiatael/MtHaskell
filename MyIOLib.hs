@@ -8,7 +8,7 @@ type InputF = IO (Maybe Input)
 type OutputF = Input -> IO ()
 
 type Input = String
-data ClientConnection = CConn { csend :: OutputF, cquit :: IO () }
+data ClientConnection = CConn { csend :: OutputF, cquit :: IO (), cget :: InputF }
 data ServerConnection = SConn { ssend :: OutputF, squit :: IO (), sget :: InputF }
 
 type Reaction = Input -> IO ()

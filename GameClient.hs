@@ -27,15 +27,6 @@ playturn pl = do
             else
               do { return npl; }; }
 --}
-get_valid_command :: Player -> IO ClientC
-get_valid_command pl = do {
-  line <- getLine
-  ; let cmd = mparse line
-  ; print cmd
-  ; case (doCommand validateMove) cmd pl of
-          Nothing -> do { return cmd; }
-          Just str -> do { putStr str; get_valid_command pl; }
-  }
 
 {--
 credits :: Game -> IO Bool

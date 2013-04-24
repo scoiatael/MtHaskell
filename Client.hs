@@ -9,6 +9,7 @@ import Control.Concurrent
 import Control.Concurrent.MVar
 import MyIOLib
 import Core
+import MtGClient
 
 mainGame :: ClientConnection -> HostName -> PortID -> IO ClientReaction
 mainGame cconn host port = do 
@@ -19,10 +20,18 @@ mainGame cconn host port = do
 startGame :: ServerConnection -> ClientConnection -> IO ClientReaction
 startGame sconn cconn = do {
   gsptr <- newEmptyMVar;
---  playerDeck <- getPlayerDeck cconn;
---  advDeck <- getAdvDeck sconn;
---  putMVar gsptr $ gameState (playerFromDeck playerDeck, advFromDeck advDeck);
+  playerDeck <- getPlayerDeck cconn;
+  advDeck <- getAdvDeck sconn;
+  putMVar gsptr (newPlayer playerDeck, advFromDeck advDeck);
   return $ CR $ onClientInput sconn cconn gsptr }
+
+getPlayerDeck cconn = do
+  (csend cconn) "Your deck:\n"
+   cget cconn
+
+getAdvDeck sconn = do
+  (ssend sconn) "Deck?"
+  sget sconn
 
 mainChat :: ClientConnection -> HostName -> PortID -> IO ClientReaction
 mainChat hout host port = do
@@ -55,19 +64,13 @@ mainRWLoop hin hout sem = fix $ \loop -> do {
 onClientInput :: ServerConnection -> ClientConnection -> MVar Core.GameState -> Input -> IO ()
 onClientInput servhandle clienthandle gsptr inpt = do {
   putStr "";
-{--  gs <- readMVar gsptr;
-  let cmd = parseClientInput input;
-  scmd <- executeClientCmd serverhandle clienthandle cmd;
-  case checkIfValidMove scmd of 
-    Right gdcmd -> do { send servhandle $ gdcmd; }
-    Left errorstr -> do { send clienthandle $ errorstr; };--} } 
-{--
---Reaction to input server side
-onServerInput :: ServerConnection -> ClientConnection -> MVar GameState -> Input -> IO ()
-onServerInput servhandle clienthandle gsptr inpt = do {
-  gs <- takeMVar gsptr;
-  let cmd = parseServerInput input;
-  gccmd <- executeServerCmd serverhandle clienthandle cmd;
-  let newgs = executeGameMove gs cmd;
-  putMVar gsptr newgs; }
---}
+
+get_valid_command :: Player -> IO ClientC
+get_valid_command pl = do {
+  line <- getLine
+  ; let cmd = mparse line
+  ; print cmd
+  ; case (doCommand validateMove) cmd pl of
+          Nothing -> do { return cmd; }
+          Just str -> do { putStr str; get_valid_command pl; }
+  }
