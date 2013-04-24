@@ -77,6 +77,7 @@ forwardInfo (fpl, fhdl) thdl sem = do
 validMove _ _ = ("", True)
   
 mainChat cconn port = do
+    (csend cconn) "Starting chat server.."
     chan <- newChan
     sock <- listenOn port
     forkIO $ fix $ \loop -> do

@@ -16,6 +16,8 @@ data GUI = GUI { window :: Window, text :: TextView, entry :: Entry, sem :: MVar
 
 main progName args guipath = do
   initGUI
+  timeoutAddFull (yield >> return True)
+                    priorityDefaultIdle 100
   gui <- loadGlade guipath
   connectGUI gui
   widgetShowAll ( window gui )
@@ -29,6 +31,7 @@ main progName args guipath = do
   mainGUI
   where
     clientPart gui hout = do
+      putStrLn "GUI client starting.."
       let hostname = (args !! 2)
       let port = (PortNumber $ toEnum (read (args !! 3) :: Int))
       let ctype = args !! 1
@@ -36,6 +39,7 @@ main progName args guipath = do
         then clientChat hout hostname port gui
         else clientGame hout hostname port gui
     serverPart gui hout = do
+      putStrLn "GUI server starting.."
       let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
       let ctype = args !! 1
       if ( ctype == "chat") 
@@ -46,9 +50,11 @@ clientChat hout hostname port gui = do
   hin <- Client.mainChat hout hostname port
   connectClientChatGUI hin gui
 
-connectClientChatGUI f gui = 
+connectClientChatGUI f gui = do
+  void $ tryTakeMVar (sem gui)
+  putMVar (sem gui) 2
   void $ afterEntryActivate (entry gui) $ 
-    do {text <- entryGetText (entry gui); cdoReact f $ text; clearEntryIf (entry gui) (sem gui);}
+    do { text <- entryGetText (entry gui); cdoReact f $ text; clearEntryIf (entry gui) (sem gui);}
 
 clientGame hout hostname port gui = do
   hin <- Client.mainGame hout hostname port

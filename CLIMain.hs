@@ -20,7 +20,8 @@ main progName args = do
     when ( stype == "server") serverPart
   where
     clientPart = do
-      let hout = stdinToClientConnection
+      putStrLn "CLI client starting..."
+      let hout = stdoutToClientConnection
       let ctype = args !! 1
       let hostname = args !! 2
       let port = (PortNumber $ toEnum (read (args !! 3) :: Int))
@@ -28,7 +29,8 @@ main progName args = do
         then mainCChat hout hostname port
         else mainCGame hout hostname port
     serverPart = do
-      let hout = stdinToClientConnection
+      putStrLn "CLI server starting..."
+      let hout = stdoutToClientConnection
       let ctype = args !! 1
       let stype = args !! 0
       let port = (PortNumber $ toEnum (read (args !! 2) :: Int))
@@ -37,12 +39,13 @@ main progName args = do
         else Server.mainGame hout port
 
 mainCChat hout hostname port = do
+  putStrLn "So far here..1"
   creact <- Client.mainChat hout hostname port
   fix $ \loop -> do { line <- getLine; cdoReact creact $ line; loop }
 
-mainCGame _ _ _ = putStr ""
+mainCGame _ _ _ = putStrLn "So far here..2"
 
-printUsage name = putStr (name ++ " { chat | game } <hostname> <port>\n")
+printUsage name = putStr (name ++ "{ server | client } { chat | game } [client -> <hostname>] <port>\n")
 
 {--
   newgame <- startNewGame

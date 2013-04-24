@@ -10,5 +10,6 @@ main = withSocketsDo $ do
   if ((length args) /= 0) && (head args) == "--cli" 
     then CLIMain.main progName (tail args)
     else do {
+      putStrLn "GUI starting..";
       gladepaths <- getDataFileName "mthresources.glade"; 
       GUIMain.main progName args gladepaths; }

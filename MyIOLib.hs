@@ -34,4 +34,4 @@ endConnection hdl = do
 exceptionHandler :: SomeException -> IO ()
 exceptionHandler e = do {putStr "Error ignored: "; print $ toException e;}
 
-stdinToClientConnection = CConn (handleToOutputF stdin) (putStrLn "Bye then..")
+stdoutToClientConnection = CConn (handleToOutputF stdout) (putStrLn "Bye then..")
