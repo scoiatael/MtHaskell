@@ -21,6 +21,7 @@ main progName args guipath = do
   gui <- loadGlade guipath
   connectGUI gui
   widgetShowAll ( window gui )
+  forkIO mainGUI
   if (length args) < 3 then do { printUsage progName; error "More args please" } else do 
     let stype = args !! 0
     let hout = CConn (addTextToBuffer (text gui)) (addTextToBuffer (text gui) "Bye then..") (waitForInputOnEntry gui)
@@ -28,7 +29,6 @@ main progName args guipath = do
       then printUsage progName
       else clientPart gui hout
     when ( stype == "server") $ serverPart gui hout
-  mainGUI
   where
     clientPart gui hout = do
       putStrLn "GUI client starting.."
@@ -53,10 +53,12 @@ waitForInputOnEntry gui = do
   connid <- afterEntryActivate (entry gui) $ do { 
     line <- entryGetText (entry gui); 
     putMVar str line; }
+  putStrLn "waiting for input.."
   line <- takeMVar str
   signalDisconnect connid
   lisNr' <- takeMVar (listenerNr gui)
   putMVar (listenerNr gui) (lisNr'-1)
+  putStrLn "got it"
   return line
 
 clientChat hout hostname port gui = do
@@ -67,7 +69,10 @@ connectClientChatGUI f gui = do
   void $ tryTakeMVar (listenerNr gui)
   putMVar (listenerNr gui) 1
   void $ afterEntryActivate (entry gui) $ 
-    do { text <- entryGetText (entry gui); cdoReact f $ text; clearEntryIf (entry gui) (sem gui);}
+    do { 
+      text <- entryGetText (entry gui); 
+      cdoReact f $ text; 
+      clearEntryIf (entry gui) (sem gui) (listenerNr gui);}
 
 clientGame hout hostname port gui = do
   hin <- Client.mainGame hout hostname port
@@ -79,21 +84,20 @@ printUsage pn = do
   putStrLn $ "Usage: " ++ pn ++ " <guifile>"
 
 connectGUI g = do
-  connectEntryText (entry g) (text g) (sem g)
+  connectEntryText (entry g) (text g) (sem g) (listenerNr g)
   onDestroy (window g) mainQuit
   where 
-    connectEntryText entry textview sem = do {
+    connectEntryText entry textview sem lisem = do {
       buffer <- textViewGetBuffer textview;
       endIter <- textBufferGetEndIter buffer;
       void $ textBufferCreateMark buffer (Just "end") endIter False; 
-      void $ afterEntryActivate entry (addTextFromEntry entry textview sem); 
-      }
+      void $ afterEntryActivate entry (addTextFromEntry entry textview sem lisem); }
 
 
-addTextFromEntry entry textview sem = do
+addTextFromEntry entry textview sem lisem = do
   text <- entryGetText entry
   addTextToBuffer textview text
-  clearEntryIf entry sem
+  clearEntryIf entry sem lisem
  
 clearEntryIf entry sem sem2 = do
   doClear <- takeMVar sem
@@ -103,7 +107,7 @@ clearEntryIf entry sem sem2 = do
       entrySetText entry "";
       putMVar sem 0; }
     else putMVar sem (doClear+1);
-  putMVar sem2 listNr
+  putMVar sem2 lisNr
   
 addTextToBuffer textview text = do
   buffer <- textViewGetBuffer textview

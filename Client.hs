@@ -15,12 +15,13 @@ mainGame :: ClientConnection -> HostName -> PortID -> IO ClientReaction
 mainGame cconn host port = do 
   h <- connectTo host port
   hSetBuffering h NoBuffering
-  startChat (handleToServerConnection h) cconn 
+  startGame (handleToServerConnection h) cconn 
 
 startGame :: ServerConnection -> ClientConnection -> IO ClientReaction
 startGame sconn cconn = do {
   gsptr <- newEmptyMVar;
   playerDeck <- getPlayerDeck cconn;
+  ssend sconn $ playerDeck;
   advDeck <- getAdvDeck sconn;
   putMVar gsptr (newPlayer playerDeck, newAdversary advDeck);
   return $ CR $ onClientInput sconn cconn gsptr }
