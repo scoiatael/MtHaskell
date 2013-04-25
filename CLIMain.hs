@@ -3,7 +3,6 @@ module CLIMain where
 import qualified Server
 import qualified Client
 import MyIOLib
-import GameClient
 
 import Data.Char (toUpper)
 import System.Environment

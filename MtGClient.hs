@@ -7,13 +7,11 @@ empty_played = [empty, empty]
 instance Show Player where
   show pl = "==>\n" ++ (show $ length ((lib pl) !! 0)) ++ " cards in Library\nHand: " ++ (show $ (hand pl) !! 0) ++ "\n--\nVisible: " ++ (show $ visible pl) ++ "<==\n"
 
-newAdversary:: HidPlayer
-newAdversary = HidPlayer_state empty_played [[]] 20
+newAdversary:: String -> HidPlayer
+newAdversary _ = HidPlayer_state empty_played [[]] 20
 
-newPlayer :: String -> IO Player
-newPlayer str = 
-  do
-    return $ Player_state [map (:[]) str] [[]] newAdversary
+newPlayer :: String -> Player
+newPlayer str =  Player_state [map (:[]) str] [[]] (newAdversary "")
 
 player_alive :: Player -> Bool
 player_alive pl = (hp $ visible pl) > 0

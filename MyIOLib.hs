@@ -4,7 +4,7 @@ import System.IO
 import Control.Monad
 import Control.Exception
 
-type InputF = IO (Maybe Input)
+type InputF = IO Input
 type OutputF = Input -> IO ()
 
 type Input = String
@@ -15,10 +15,11 @@ type Reaction = Input -> IO ()
 newtype ClientReaction = CR { cdoReact :: Reaction}
 newtype ServerReaction = SR { sdoReact :: Reaction} 
 
-handleToInputF h = do {
+handleToInputF = hGetLine {--do {
   ready <- hWaitForInput h 100;
   if ready then do { str <- hGetLine h; return $ Just str }
-    else do { return Nothing; }; }
+    else do { return Nothing; }; } --}
+  
 
 handleToOutputF h str = do {
   hPutStrLn h str;

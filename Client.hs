@@ -22,12 +22,12 @@ startGame sconn cconn = do {
   gsptr <- newEmptyMVar;
   playerDeck <- getPlayerDeck cconn;
   advDeck <- getAdvDeck sconn;
-  putMVar gsptr (newPlayer playerDeck, advFromDeck advDeck);
+  putMVar gsptr (newPlayer playerDeck, newAdversary advDeck);
   return $ CR $ onClientInput sconn cconn gsptr }
 
 getPlayerDeck cconn = do
   (csend cconn) "Your deck:\n"
-   cget cconn
+  cget cconn
 
 getAdvDeck sconn = do
   (ssend sconn) "Deck?"
@@ -54,8 +54,7 @@ mainRWLoop hin hout sem = fix $ \loop -> do {
   cont <- isEmptyMVar sem;
   when cont loop }
   where
-    process Nothing = putStr ""
-    process (Just cont) = do { 
+    process cont = do { 
       when (cont == "quit") $ do { void $ tryTakeMVar sem; putMVar sem (); };
       hout cont; }; 
 
@@ -63,7 +62,7 @@ mainRWLoop hin hout sem = fix $ \loop -> do {
 --Reaction to input client side
 onClientInput :: ServerConnection -> ClientConnection -> MVar Core.GameState -> Input -> IO ()
 onClientInput servhandle clienthandle gsptr inpt = do {
-  putStr "";
+  putStr ""; }
 
 get_valid_command :: Player -> IO ClientC
 get_valid_command pl = do {
