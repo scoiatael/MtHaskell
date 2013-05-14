@@ -27,11 +27,9 @@ startGame sconn cconn = do {
   return $ CR $ onClientInput sconn cconn gsptr }
 
 getPlayerDeck cconn = do
-  (csend cconn) "Your deck:\n"
-  cget cconn
+  cprompt cconn "Your deck:\n"
 
 getAdvDeck sconn = do
-  (ssend sconn) "Deck?"
   sget sconn
 
 mainChat :: ClientConnection -> HostName -> PortID -> IO ClientReaction

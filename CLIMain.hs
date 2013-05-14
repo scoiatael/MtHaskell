@@ -47,16 +47,8 @@ mainCGame hout hostname port = do
 
 printUsage name = putStr (name ++ "{ server | client } { chat | game } [client -> <hostname>] <port>\n")
 
-{--
-  newgame <- startNewGame
-  play newgame
-  putStr "Play again? Y/N\n"
-  line <- getLine
-  if (toUpper (line !! 0)) == 'Y'
-    then 
-      do
-        main args hin hout
-    else
-      do
-        putStr "Bye then..\n"
---}
+consolePromptF str = do
+  putStrLn str
+  getLine
+
+consoleClientConnection = CConn (handleToOutputF stdout) (putStrLn "Bye then..") (handleToInputF stdin) (consolePromptF)

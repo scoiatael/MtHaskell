@@ -24,7 +24,7 @@ main progName args guipath = do
   forkIO mainGUI
   if (length args) < 3 then do { printUsage progName; error "More args please" } else do 
     let stype = args !! 0
-    let hout = CConn (addTextToBuffer (text gui)) (addTextToBuffer (text gui) "Bye then..") (waitForInputOnEntry gui)
+    let hout = CConn (addTextToBuffer (text gui)) (addTextToBuffer (text gui) "Bye then..") (waitForInputOnEntry gui) (promptUser gui)
     when ( stype == "client") $ if (length args) < 4 
       then printUsage progName
       else clientPart gui hout
@@ -46,6 +46,13 @@ main progName args guipath = do
         then Server.mainChat hout port
         else Server.mainGame hout port
 
+promptUser gui str = do
+  widgetHideAll (window gui)
+  putStrLn str
+  line <- getLine
+  widgetShowAll (window gui)
+  return line
+
 waitForInputOnEntry gui = do
   str <- newEmptyMVar
   lisNr <- takeMVar (listenerNr gui)
@@ -60,6 +67,7 @@ waitForInputOnEntry gui = do
   putMVar (listenerNr gui) (lisNr'-1)
   putStrLn "got it"
   return line
+  
 
 clientChat hout hostname port gui = do
   hin <- Client.mainChat hout hostname port
